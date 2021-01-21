@@ -1,0 +1,40 @@
+# Maximum sum of either even or odd numbers from 1 to n
+# ARGS: 100
+# remainder = num - divisor * (num / divisor)
+
+@sum_even_n(n: int): int {
+    zero: int = const 0;
+    sum_even:  int = const 0;
+    sum_odd:  int = const 0;
+    one:  int = const 1;
+    divisor:  int = const 2;
+.condition:
+    v4: bool = ge n one;
+    br v4 .find_modulus .end;
+.find_modulus:
+    temp1: int = div n divisor;
+    temp2: int = mul divisor temp1;
+    rem: int = sub n temp2;
+    is_zero: bool = eq rem zero;
+    br is_zero .sum_even_add .sum_odd_add;
+.sum_odd_add:
+    sum_odd: int = add sum_odd n;
+    n: int = sub n one;
+    jmp .condition;
+.sum_even_add:
+    sum_even: int = add sum_even n;
+    n: int = sub n one;
+    jmp .condition;
+.end:
+    is_even_max: bool = ge sum_even sum_odd;
+    br is_even_max .max_even .max_odd;
+.max_odd:
+    ret sum_odd;
+.max_even:
+    ret sum_even;
+}
+
+@main(n: int) {
+    sum: int = call@sum_even_n n;
+    print sum;
+}
