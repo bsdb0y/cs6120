@@ -1,6 +1,23 @@
 #[macro_use]
 extern crate generator;
 use generator::Gn;
+use indexmap::IndexMap;
+
+fn block_map<'a>(blocks: generator::Generator<'_, (), Vec<&'a serde_json::Value>>) -> IndexMap<String, Vec<&'a serde_json::Value>> {
+    let mut hashmap : IndexMap<String, Vec<&serde_json::Value>> =  IndexMap::new();
+    let mut name: String;
+    for block in blocks {
+        if block[0]["label"] != serde_json::json!(null) {
+            name = block[0]["label"].as_str().unwrap().to_string();
+        }
+        else {
+            name = format!("b{}", hashmap.len().to_string());
+        }
+        hashmap.insert(name, block);
+    }
+    println!("{:?}", hashmap);
+    hashmap
+}
 
 fn basic_block(body: &serde_json::Value) -> generator::Generator<'_,(), Vec<&serde_json::Value>> {
     let mut temp: Vec<&serde_json::Value> = vec![];
@@ -47,9 +64,7 @@ fn main() {
     let json_obj: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
     for items in json_obj["functions"].as_array() {
         for item in items.iter() {
-            for block in basic_block(item) {
-                println!("{:?}", block);
-            }
+            block_map(basic_block(item));
         }
     }
 }
