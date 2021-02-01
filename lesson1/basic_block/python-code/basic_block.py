@@ -2,8 +2,22 @@
 
 import json
 import sys
+from collections import OrderedDict
 
 TERMINATORS = ['jmp', 'br', 'ret']
+
+
+def block_map(blocks):
+    out = OrderedDict()
+
+    for block in blocks:
+        if 'label' in block[0]:
+            name = block[0]['label']
+        else:
+            name = 'b{}'.format(len(out))
+        
+        out[name] = block
+    return out
 
 
 def form_blocks(body):
@@ -24,18 +38,32 @@ def form_blocks(body):
         yield cur_block
 
 
-def main():
-    if len(sys.argv) <= 1:
-        print("Usage: {} <json-file>".format(sys.argv[0]))
-        sys.exit(-1)
+def get_cfg(name2block):
+    """
+    Given a name-to-block_map, producec a mapping from block names to
+    sucessor block names
+    """
+    out = {}
+    for i, (name, block) in enumerate(name2block.items()):
+        last = block[-1]
+        if last['op'] in ('jmp', 'br'):
+            succ = last['labels']
+        elif last['op'] == 'ret':
+            succ = []
+        else:
+            if i == len(name2block) - 1:
+                succ = []
+            else:
+                succ = [list(name2block.keys())[i + 1]]
 
-    path = sys.argv[1]
-    with open(path) as f:
-        prog = json.load(f)
+        out[name] = succ
+    return out
+
+def mycfg():
+    prog = json.load(sys.stdin)
     for func in prog['functions']:
-        for block in form_blocks(func['instrs']):
-            print("=> {}".format(json.dumps(block)))
-
+        name2block = block_map(form_blocks(func['instrs']))
+        print(name2block)
 
 if __name__ == '__main__':
-    main()
+    mycfg()
